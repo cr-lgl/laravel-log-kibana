@@ -41,6 +41,8 @@ services:
       dockerfile: ./Dockerfile
       args:
         ELK_VERSION: 7.9.3
+    volumes:
+      - ./.data/filebeat/fbdata:/usr/share/filebeat/data
     networks:
       - backend
     ports:
