@@ -1,0 +1,74 @@
+version: '3.7'
+
+networks:
+  backend:
+    driver: bridge
+
+services:
+  workspace:
+    tty: true
+    build:
+      context: ./workspace
+      dockerfile: ./Dockerfile
+      args:
+        PHP_VERSION: '7.4.9'
+        APP_USER_ID: '${APP_USER_ID}'
+        APP_GROUP_ID: '${APP_GROUP_ID}'
+    volumes:
+      - ${APP_PATH}:/var/www/html
+    networks:
+      - backend
+    ports:
+      - ${WORKSPACE_PORT}:8000
+
+  elasticsearch:
+    build:
+      context: ./elasticsearch
+      dockerfile: ./Dockerfile
+    environment:
+      - discovery.type=single-node
+    volumes:
+      -  ./.data/elasticsearch/data:/usr/share/elasticsearch/data
+    networks:
+      - backend
+    ports:
+      - ${ELASTICSEARCH_REST_PORT}:9200
+      - ${ELASTICSEARCH_CLUSTER_NODE_PORT}:9300
+
+  logstash:
+    build:
+      context: ./logstash
+      dockerfile: ./Dockerfile
+      args:
+        ELK_VERSION: 7.9.3
+    networks:
+      - backend
+    ports:
+      - ${LOGSTASH_BEAT_PORT}:5044
+      - ${LOGSTASH_HTTP_PORT}:9600
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    build:
+      context: ./kibana
+      dockerfile: ./Dockerfile
+    networks:
+      - backend
+    ports:
+      - ${KIBANA_PORT}:5601
+    depends_on:
+      - elasticsearch
+
+  filebeats:
+    build:
+      context: ./filebeat
+      dockerfile: Dockerfile
+    restart: on-failure
+    volumes:
+      - ${FILEBEAT_LARAVEL_LOG_PATH}:/var/log/laravel
+    networks:
+      - backend
+    depends_on:
+      - elasticsearch
+      - workspace
