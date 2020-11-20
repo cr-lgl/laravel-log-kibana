@@ -1,5 +1,5 @@
 # Laravel Log Kibana
-Testing Laravel Log For Kibana Json Format
+Testing Laravel Log For Kibana JSON Format
 
 ## Getting Started
 ```bash
